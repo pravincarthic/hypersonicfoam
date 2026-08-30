@@ -238,13 +238,13 @@ void Foam::nonEqSmoluchowskiJumpTFvPatchScalarField::write(Ostream& os) const
 {
     fvPatchScalarField::write(os);
 
-    writeEntryIfDifferent<word>(os, "U", "U", UName_);
-    writeEntryIfDifferent<word>(os, "rho", "rho", rhoName_);
-    //writeEntryIfDifferent<word>(os, "psi", "thermo:psi", psiName_);
-    writeEntryIfDifferent<word>(os, "mu", "mu", muName_);
-    writeEntryIfDifferent<word>(os, "alphatr", "alphatr", alphaName_); // NEW VINCENT 03/03/2016
-    writeEntryIfDifferent<word>(os, "gammatr", "gammatr", gammatrName_); // NEW VINCENT 03/03/2016
-    writeEntryIfDifferent<word>(os, "mfp", "mfp", mfpName_); // NEW VINCENT 28/02/2016
+    os.writeEntryIfDifferent<word>("U", "U", UName_);
+    os.writeEntryIfDifferent<word>("rho", "rho", rhoName_);
+    //os.writeEntryIfDifferent<word>("psi", "thermo:psi", psiName_);
+    os.writeEntryIfDifferent<word>("mu", "mu", muName_);
+    os.writeEntryIfDifferent<word>("alphatr", "alphatr", alphaName_); // NEW VINCENT 03/03/2016
+    os.writeEntryIfDifferent<word>("gammatr", "gammatr", gammatrName_); // NEW VINCENT 03/03/2016
+    os.writeEntryIfDifferent<word>("mfp", "mfp", mfpName_); // NEW VINCENT 28/02/2016
 
     os.writeKeyword("accommodationCoeff")
         << accommodationCoeff_ << token::END_STATEMENT << nl;

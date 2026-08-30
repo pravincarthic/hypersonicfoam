@@ -154,7 +154,7 @@ Foam::autoPtr<Thermo> Foam::basic2Thermo::New
     );
 
     typename Thermo::fvMeshConstructorTableType::iterator cstrIter =
-        lookupThermo<Thermo, typename Thermo::fvMeshConstructorTable>
+        lookupThermo<Thermo, typename Thermo::fvMeshConstructorTableType>
         (
             thermoDict,
             Thermo::fvMeshConstructorTablePtr_
@@ -173,7 +173,7 @@ Foam::autoPtr<Thermo> Foam::basic2Thermo::New
 )
 {
     typename Thermo::dictionaryConstructorTableType::iterator cstrIter =
-        lookupThermo<Thermo, typename Thermo::dictionaryConstructorTable>
+        lookupThermo<Thermo, typename Thermo::dictionaryConstructorTableType>
         (
             dict,
             Thermo::dictionaryConstructorTablePtr_

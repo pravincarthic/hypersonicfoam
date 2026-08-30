@@ -224,7 +224,15 @@ endfunction()
 # ============================================================================
 
 hystrath_own_include_dirs("${HY}/src/thermophysicalModels/strath/strathSpecie" strathSpecie_OWN_INC)
-hystrath_of_include_dirs(strathSpecie_OF_INC thermophysicalModels/specie)
+# thermophysicalProperties/lnInclude is needed transitively: stock specie
+# headers (e.g. icoTabulated.H) now pull in
+# nonUniformTableThermophysicalFunction.H from that module. Added here
+# (rather than to every module that links strathSpecie) so it propagates
+# via PUBLIC linkage to every downstream target automatically.
+hystrath_of_include_dirs(strathSpecie_OF_INC
+  thermophysicalModels/specie
+  thermophysicalModels/thermophysicalProperties
+)
 
 add_library(strathSpecie SHARED
   ${HY}/src/thermophysicalModels/strath/strathSpecie/specie/advancedSpecie/advancedSpecie.C
@@ -243,6 +251,7 @@ hystrath_of_include_dirs(strathReactionThermo_OF_INC
   finiteVolume transportModels/compressible
   thermophysicalModels/basic thermophysicalModels/reactionThermo
   thermophysicalModels/specie thermophysicalModels/solidSpecie
+  thermophysicalModels/thermophysicalProperties
   meshTools
 )
 

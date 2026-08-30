@@ -499,7 +499,7 @@ Foam::Reaction2<Reaction2Thermo>::New
     const dictionary& dict
 )
 {
-    const word& reactionTypeName = dict.lookup("type");
+    const word reactionTypeName = dict.get<word>("type");
 
     typename dictionaryConstructorTableType::iterator cstrIter
         = dictionaryConstructorTablePtr_->find(reactionTypeName);
