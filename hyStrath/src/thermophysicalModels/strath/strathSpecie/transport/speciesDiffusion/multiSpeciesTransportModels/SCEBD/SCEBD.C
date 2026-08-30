@@ -84,7 +84,7 @@ template<class ThermoType>
 Foam::SCEBD<ThermoType>::SCEBD
 (
     rho2ReactionThermo& thermo,
-    const compressible::turbulenceModel& turbulence
+    const compressible::momentumTransportModel& turbulence
 )
 :
     multiSpeciesTransportModel(thermo, turbulence),
