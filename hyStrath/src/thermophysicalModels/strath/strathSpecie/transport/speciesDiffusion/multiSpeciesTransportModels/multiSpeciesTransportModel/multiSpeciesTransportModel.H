@@ -160,7 +160,7 @@ public:
         fvMesh,
         (
             rho2ReactionThermo& thermo,
-            const compressible::turbulenceModel& turbulence
+            const compressible::momentumTransportModel& turbulence
         ),
         (thermo, turbulence)
     );
@@ -173,7 +173,7 @@ public:
         multiSpeciesTransportModel
         (
             rho2ReactionThermo& thermo,
-            const compressible::turbulenceModel& turbulence
+            const compressible::momentumTransportModel& turbulence
         );
 
 
@@ -184,7 +184,7 @@ public:
         static autoPtr<multiSpeciesTransportModel> New
         (
             rho2ReactionThermo& thermo,
-            const compressible::turbulenceModel& turbulence
+            const compressible::momentumTransportModel& turbulence
         );
 
 

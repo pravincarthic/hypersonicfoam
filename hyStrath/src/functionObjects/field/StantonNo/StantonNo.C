@@ -25,7 +25,7 @@ License
 
 #include "StantonNo.H"
 #include "volFields.H"
-#include "turbulenceModel.H"
+#include "momentumTransportModel.H"
 #include "turbulentFluidThermoModel.H"
 #include "wallFvPatch.H"
 #include "addToRunTimeSelectionTable.H"
@@ -154,17 +154,17 @@ bool Foam::functionObjects::StantonNo::execute()
             lookupObject<volScalarField>(typeName)
         );
 
-    if (foundObject<turbulenceModel>(turbulenceModel::propertiesName))
+    if (foundObject<momentumTransportModel>(momentumTransportModel::propertiesName))
     {
         if (foundObject<multi2Thermo>(multi2Thermo::dictName))
         {    
             volScalarField::Boundary& StantonNoBf =
                 StantonNo.boundaryFieldRef();
 
-            const turbulenceModel& model =
-                lookupObject<turbulenceModel>
+            const momentumTransportModel& model =
+                lookupObject<momentumTransportModel>
                 (
-                    turbulenceModel::propertiesName
+                    momentumTransportModel::propertiesName
                 );
                 
             const multi2Thermo& thermo =

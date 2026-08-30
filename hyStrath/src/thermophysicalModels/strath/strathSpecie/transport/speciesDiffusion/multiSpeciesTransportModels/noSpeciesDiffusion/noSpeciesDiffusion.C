@@ -40,7 +40,7 @@ template<class ThermoType>
 Foam::noSpeciesDiffusion<ThermoType>::noSpeciesDiffusion
 (
     rho2ReactionThermo& thermo,
-    const compressible::turbulenceModel& turbulence
+    const compressible::momentumTransportModel& turbulence
 )
 :
     multiSpeciesTransportModel(thermo, turbulence),

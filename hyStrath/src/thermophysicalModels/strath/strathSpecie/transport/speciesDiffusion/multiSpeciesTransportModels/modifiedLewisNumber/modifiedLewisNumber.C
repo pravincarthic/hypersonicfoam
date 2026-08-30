@@ -62,7 +62,7 @@ template<class ThermoType>
 Foam::modifiedLewisNumber<ThermoType>::modifiedLewisNumber
 (
     rho2ReactionThermo& thermo,
-    const compressible::turbulenceModel& turbulence
+    const compressible::momentumTransportModel& turbulence
 )
 :
     Fick<ThermoType>(thermo, turbulence),

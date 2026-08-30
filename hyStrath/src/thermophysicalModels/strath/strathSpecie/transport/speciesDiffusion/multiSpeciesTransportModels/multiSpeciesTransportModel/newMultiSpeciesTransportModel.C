@@ -32,7 +32,7 @@ Foam::autoPtr<Foam::multiSpeciesTransportModel>
 Foam::multiSpeciesTransportModel::New
 (
     rho2ReactionThermo& thermo,
-    const compressible::turbulenceModel& turbulence
+    const compressible::momentumTransportModel& turbulence
 )
 {
     const word partialModelName = word(thermo.transportDictionary().subDict("transportModels").lookup("multiSpeciesTransport"));

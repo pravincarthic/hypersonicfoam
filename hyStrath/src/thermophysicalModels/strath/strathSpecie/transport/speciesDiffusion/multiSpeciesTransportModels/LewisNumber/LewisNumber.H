@@ -78,7 +78,7 @@ public:
         LewisNumber
         (
             rho2ReactionThermo& thermo,
-            const compressible::turbulenceModel& turbulence
+            const compressible::momentumTransportModel& turbulence
         );
 
 
