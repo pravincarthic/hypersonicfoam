@@ -57,7 +57,7 @@ Foam::mhd::mhdModel::New
 
     Info<< "Selector 1: Selecting mhdModel " << modelType << endl;
 
-    thermoConstructorTable::iterator cstrIter =
+    thermoConstructorTableType::iterator cstrIter =
         thermoConstructorTablePtr_->find(modelType);
 
     if (cstrIter == thermoConstructorTablePtr_->end())
@@ -87,7 +87,7 @@ Foam::mhd::mhdModel::New
 
     Info<< "Selector 2: Selecting mhdModel " << modelType << endl;
 
-    dictionaryConstructorTable::iterator cstrIter =
+    dictionaryConstructorTableType::iterator cstrIter =
         dictionaryConstructorTablePtr_->find(modelType);
     
     if (cstrIter == dictionaryConstructorTablePtr_->end())

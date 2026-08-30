@@ -217,13 +217,13 @@ Foam::Reaction2<Reaction2Thermo>::specieCoeffs::specieCoeffs
 
         if (i != word::npos)
         {
-            string exponentStr = specieName
+            string exponentStr = specieName.substr
             (
                 i + 1,
                 specieName.size() - i - 1
             );
             exponent = atof(exponentStr.c_str());
-            specieName = specieName(0, i);
+            specieName = specieName.substr(0, i);
         }
 
         if (species.contains(specieName))
@@ -466,7 +466,7 @@ Foam::Reaction2<Reaction2Thermo>::New
 
     const word reactionTypeName(is);
 
-    typename IstreamConstructorTable::iterator cstrIter
+    typename IstreamConstructorTableType::iterator cstrIter
         = IstreamConstructorTablePtr_->find(reactionTypeName);
 
     if (cstrIter == IstreamConstructorTablePtr_->end())
@@ -499,9 +499,9 @@ Foam::Reaction2<Reaction2Thermo>::New
     const dictionary& dict
 )
 {
-    const word& reactionTypeName = dict.lookup("type");
+    const word reactionTypeName = dict.get<word>("type");
 
-    typename dictionaryConstructorTable::iterator cstrIter
+    typename dictionaryConstructorTableType::iterator cstrIter
         = dictionaryConstructorTablePtr_->find(reactionTypeName);
 
     if (cstrIter == dictionaryConstructorTablePtr_->end())

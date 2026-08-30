@@ -222,11 +222,11 @@ void Foam::nonEqMaxwellSlipUFvPatchVectorField::updateCoeffs()
 void Foam::nonEqMaxwellSlipUFvPatchVectorField::write(Ostream& os) const
 {
     fvPatchVectorField::write(os);
-    writeEntryIfDifferent<word>(os, "Tt", "Tt", TName_);
-    writeEntryIfDifferent<word>(os, "rho", "rho", rhoName_);
-    writeEntryIfDifferent<word>(os, "mu", "mu", muName_);
-    writeEntryIfDifferent<word>(os, "tauMC", "tauMC", tauMCName_);
-    writeEntryIfDifferent<word>(os, "mfp", "mfp", mfpName_); // NEW VINCENT 28/02/2016
+    os.writeEntryIfDifferent<word>("Tt", "Tt", TName_);
+    os.writeEntryIfDifferent<word>("rho", "rho", rhoName_);
+    os.writeEntryIfDifferent<word>("mu", "mu", muName_);
+    os.writeEntryIfDifferent<word>("tauMC", "tauMC", tauMCName_);
+    os.writeEntryIfDifferent<word>("mfp", "mfp", mfpName_); // NEW VINCENT 28/02/2016
 
     os.writeKeyword("accommodationCoeff")
         << accommodationCoeff_ << token::END_STATEMENT << nl;

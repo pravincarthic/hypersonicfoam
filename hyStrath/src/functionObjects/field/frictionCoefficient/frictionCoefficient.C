@@ -27,6 +27,7 @@ License
 #include "volFields.H"
 #include "turbulenceModel.H"
 #include "turbulentFluidThermoModel.H"
+#include "multi2Thermo.H"
 #include "wallFvPatch.H"
 #include "addToRunTimeSelectionTable.H"
 
@@ -264,7 +265,7 @@ bool Foam::functionObjects::frictionCoefficient::write()
                     << " Cf : min = " << minCf << ", max = " << maxCf
                     << ", average = " << avgCf << nl;
 
-                writeTime(file());
+                writeCurrentTime(file());
                 file()
                     << token::TAB << patch.name()
                     << token::TAB << minCf

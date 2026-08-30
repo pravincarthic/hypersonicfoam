@@ -30,14 +30,13 @@
       only builds hyStrath's own libraries/solvers against that install,
       it does not build OpenFOAM itself.
 
-  Known limitation carried over from the original wmake build, not
-  introduced by this CMake port: hy2Foam.C's hy2Foam_solver.H references
-  two preprocessor macros, HY2FOAM_EXTERNAL_FILE_HYBRID_COUPLING and
-  HY2FOAM_EXTERNAL_FILE_OUTPUT, that are never #define'd anywhere in the
-  source tree (unlike the three sibling HY2FOAM_EXTERNAL_FILE_* macros,
-  which are #define'd at the top of hy2Foam.C). Both wmake and this
-  CMake build will fail to compile hy2Foam.C until those two macros are
-  defined somewhere (e.g. alongside the other three in hy2Foam.C).
+  Note: hy2Foam_solver.H also references two further macros,
+  HY2FOAM_EXTERNAL_FILE_HYBRID_COUPLING and HY2FOAM_EXTERNAL_FILE_OUTPUT,
+  which are never #define'd anywhere in the source tree - this is not a
+  bug: both uses are wrapped in #ifdef/#endif, so they are optional
+  extension points (e.g. for coupling hy2Foam with an external
+  application, or adding custom per-timestep output) that compile away to
+  nothing when left undefined, exactly as intended.
 #]=======================================================================]
 
 cmake_minimum_required(VERSION 3.16)
@@ -125,11 +124,57 @@ add_compile_options(
   -Wall -Wextra -Wold-style-cast -Wnon-virtual-dtor
   -Wno-unused-parameter -Wno-invalid-offsetof -Wno-attributes -Wno-unknown-pragmas
   $<$<CONFIG:Release>:-O2>
-  $<$<CONFIG:RelWithDebInfo>:-O2;-g>
-  $<$<CONFIG:Debug>:-O0;-g>
+  $<$<CONFIG:RelWithDebInfo>:-O2>
+  $<$<CONFIG:RelWithDebInfo>:-g>
+  $<$<CONFIG:Debug>:-O0>
+  $<$<CONFIG:Debug>:-g>
 )
 
+# CMake's own per-build-type defaults (e.g. Release => -O3 -DNDEBUG) would
+# stack on top of the flags above and diverge from wmake's actual -O2 (no
+# -DNDEBUG) Opt build; blank them out so add_compile_options() above is the
+# only source of optimisation/debug flags.
+foreach(_cfg RELEASE RELWITHDEBINFO DEBUG MINSIZEREL)
+  set(CMAKE_CXX_FLAGS_${_cfg} "")
+endforeach()
+
 link_directories("${FOAM_LIBBIN}" "${FOAM_USER_LIBBIN}")
+
+# wmake injects these into every single compile/link via PROJECT_INC /
+# PROJECT_LIBS in wmake/makefiles/general - not via any module's own
+# Make/options - since every OpenFOAM library and application needs
+# OpenFOAM's own core headers (word.H, List.H, scalar.H, ...) and
+# libOpenFOAM.so itself. Verified directly against that file in the real
+# v2412 release rather than assumed.
+include_directories(
+  "${FOAM_SRC}/OpenFOAM/lnInclude"
+  "${FOAM_SRC}/OSspecific/POSIX/lnInclude"
+)
+link_libraries(OpenFOAM dl)
+
+# libOpenFOAM.so has undefined references to UPstream:: symbols that are
+# only ever resolved at the final executable's link step, not when building
+# the intermediate shared libraries (ELF .so's are allowed undefined
+# symbols; only linking an actual executable requires them all resolved) -
+# this is why the error only shows up linking hy2Foam/hy2MhdFoam themselves,
+# not any of the libraries above them. wmake resolves this the same way
+# (see wmake/rules/General/Gcc/link-c++'s "Link dummy stub to resolve
+# libPstream symbols" comment): the actual MPI Pstream implementation is
+# chosen by env vars this build doesn't try to replicate, but the "dummy"
+# (non-MPI) one always exists and satisfies the link regardless of whether
+# MPI is actually used at runtime. Applied only to the two solver
+# executables below (via hystrath_link_pstream_dummy), not every library,
+# so no library ends up with a hard runtime dependency on the dummy variant
+# if the case is actually run under mpirun with the real MPI Pstream.
+if(EXISTS "${FOAM_LIBBIN}/dummy/libPstream.so")
+  set(HYSTRATH_PSTREAM_DUMMY_DIR "${FOAM_LIBBIN}/dummy")
+endif()
+function(hystrath_link_pstream_dummy target)
+  if(HYSTRATH_PSTREAM_DUMMY_DIR)
+    target_link_directories(${target} PRIVATE "${HYSTRATH_PSTREAM_DUMMY_DIR}")
+    target_link_libraries(${target} PRIVATE Pstream)
+  endif()
+endfunction()
 
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${FOAM_USER_LIBBIN}")
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${FOAM_USER_APPBIN}")
@@ -152,12 +197,35 @@ set(HY "${CMAKE_CURRENT_SOURCE_DIR}")
 # module is added directly as an include directory - this reproduces the
 # same "any header, anywhere in the module, is reachable by bare name"
 # effect that lnInclude gives wmake builds.
+#
+# A handful of directories in this tree are stale/alternate copies that
+# were never wired into any Make/files (e.g. chemistryModel.Shat/,
+# reaction/Reactions.Shat/, mhdModel/submodels/conductivityModels/1/ - see
+# PORTING_NOTES.md). They must be excluded here: several of them define
+# headers with the exact same name as their live counterpart (e.g. both
+# reaction/Reactions/Reaction/Reaction2.H and
+# reaction/Reactions.Shat/Reaction/Reaction2.H exist), so if both ended up
+# on the include path which one wins would depend on directory-glob order
+# rather than which one is actually built - silently compiling the wrong,
+# stale header.
+set(HYSTRATH_DEAD_DIR_PATTERNS
+  "\\.Shat($|/)"
+  "/conductivityModels/1($|/)"
+)
 function(hystrath_own_include_dirs root outvar)
   file(GLOB_RECURSE _headers "${root}/*.H")
   set(_dirs "")
   foreach(_h ${_headers})
-    get_filename_component(_d "${_h}" DIRECTORY)
-    list(APPEND _dirs "${_d}")
+    set(_dead FALSE)
+    foreach(_pat ${HYSTRATH_DEAD_DIR_PATTERNS})
+      if(_h MATCHES "${_pat}")
+        set(_dead TRUE)
+      endif()
+    endforeach()
+    if(NOT _dead)
+      get_filename_component(_d "${_h}" DIRECTORY)
+      list(APPEND _dirs "${_d}")
+    endif()
   endforeach()
   if(_dirs)
     list(REMOVE_DUPLICATES _dirs)
@@ -180,7 +248,15 @@ endfunction()
 # ============================================================================
 
 hystrath_own_include_dirs("${HY}/src/thermophysicalModels/strath/strathSpecie" strathSpecie_OWN_INC)
-hystrath_of_include_dirs(strathSpecie_OF_INC thermophysicalModels/specie)
+# thermophysicalProperties/lnInclude is needed transitively: stock specie
+# headers (e.g. icoTabulated.H) now pull in
+# nonUniformTableThermophysicalFunction.H from that module. Added here
+# (rather than to every module that links strathSpecie) so it propagates
+# via PUBLIC linkage to every downstream target automatically.
+hystrath_of_include_dirs(strathSpecie_OF_INC
+  thermophysicalModels/specie
+  thermophysicalModels/thermophysicalProperties
+)
 
 add_library(strathSpecie SHARED
   ${HY}/src/thermophysicalModels/strath/strathSpecie/specie/advancedSpecie/advancedSpecie.C
@@ -199,6 +275,7 @@ hystrath_of_include_dirs(strathReactionThermo_OF_INC
   finiteVolume transportModels/compressible
   thermophysicalModels/basic thermophysicalModels/reactionThermo
   thermophysicalModels/specie thermophysicalModels/solidSpecie
+  thermophysicalModels/thermophysicalProperties
   meshTools
 )
 
@@ -306,7 +383,7 @@ hystrath_of_include_dirs(relaxationTimeModels_OF_INC
   finiteVolume meshTools transportModels/compressible
   thermophysicalModels/specie thermophysicalModels/basic
   thermophysicalModels/reactionThermo thermophysicalModels/chemistryModel
-  TurbulenceModels/turbulenceModels TurbulenceModels/compressible
+  TurbulenceModels/turbulenceModels
 )
 
 add_library(relaxationTimeModels SHARED
@@ -327,7 +404,7 @@ target_include_directories(relaxationTimeModels PUBLIC ${relaxationTimeModels_OW
 target_link_libraries(relaxationTimeModels PUBLIC
   strathSpecie strathReactionThermophysicalModels strathChemistryModel
   VTRelaxationModels VVRelaxationModels eVRelaxationModels
-  compressibleTransportModels compressibleTurbulenceModels
+  compressibleTransportModels strathCompressibleTurbulenceModel
 )
 
 # ============================================================================
@@ -351,7 +428,7 @@ hystrath_of_include_dirs(rarefactionParameters_OF_INC
   finiteVolume meshTools transportModels/compressible
   thermophysicalModels/specie thermophysicalModels/basic
   thermophysicalModels/reactionThermo thermophysicalModels/chemistryModel
-  TurbulenceModels/turbulenceModels TurbulenceModels/compressible
+  TurbulenceModels/turbulenceModels
 )
 
 add_library(rarefactionParameters SHARED
@@ -363,6 +440,7 @@ target_include_directories(rarefactionParameters PUBLIC ${rarefactionParameters_
 target_link_libraries(rarefactionParameters PUBLIC
   strathSpecie strathReactionThermophysicalModels strathChemistryModel mfpModels
   compressibleTransportModels
+  strathCompressibleTurbulenceModel
 )
 
 # ============================================================================
@@ -380,6 +458,7 @@ target_include_directories(mixingRules PUBLIC ${mixingRules_OWN_INC} ${rarefacti
 target_link_libraries(mixingRules PUBLIC
   strathSpecie strathReactionThermophysicalModels strathChemistryModel
   compressibleTransportModels
+  strathCompressibleTurbulenceModel
 )
 
 hystrath_own_include_dirs("${HY}/src/thermophysicalModels/strath/strathSpecie/transport/speciesDiffusion/diffusivityModels" diffusivityModels_OWN_INC)
@@ -408,6 +487,7 @@ target_include_directories(multiSpeciesTransportModels PUBLIC ${multiSpeciesTran
 target_link_libraries(multiSpeciesTransportModels PUBLIC
   strathSpecie strathReactionThermophysicalModels strathChemistryModel diffusivityModels
   compressibleTransportModels
+  strathCompressibleTurbulenceModel
 )
 
 # ============================================================================
@@ -438,6 +518,57 @@ target_include_directories(strathTurbulenceModels PUBLIC ${strathTurbulenceModel
 target_link_libraries(strathTurbulenceModels PUBLIC finiteVolume meshTools)
 
 # ============================================================================
+# 11b. src/TurbulenceModels/compressible  ->  libstrathCompressibleTurbulenceModels
+#
+# Unlike TurbulenceModels/{compressible's sibling} schemes (confirmed a
+# byte-identical vendored copy of stock DEShybrid and removed), this
+# directory turned out - on a full per-file diff against the real v2412
+# source, not just the two-file spot check done earlier in this port - to
+# be a genuine, load-bearing fork: turbulentFluidThermoModel.H retargets
+# the compressible::turbulenceModel typedef chain
+# (ThermalDiffusivity<CompressibleTurbulenceModel<...>>) from stock
+# fluidThermo to hyStrath's own multi2Thermo, which is what lets
+# hy2Foam's `compressible::turbulenceModel::New(rho, U, phi, thermo)` (with
+# thermo a rho2ReactionThermo&, unrelated to fluidThermo) compile and work
+# at all. CompressibleTurbulenceModel, ThermalDiffusivity, EddyDiffusivity
+# and compressibleTurbulenceModel.C/H are similarly adapted. Restored from
+# the pre-simplification commit (98e8db2) rather than re-derived from
+# memory, then ported the same way as everything else in this file.
+#
+# Only the three wall-function BCs actually listed in Make/files
+# (alphatWallFunction, alphatJayatillekeWallFunction,
+# alphatPhaseChangeWallFunction) are compiled; the other derivedFvPatchFields
+# subdirectories present on disk (temperatureCoupledBase,
+# turbulentTemperatureCoupledBaffleMixed, etc.) were never part of this
+# library's build even under wmake and are stock classes now living in
+# OpenFOAM's own thermoTools module - not needed unless a case explicitly
+# asks for one of them.
+# ============================================================================
+
+hystrath_own_include_dirs("${HY}/src/TurbulenceModels/compressible" strathCompressibleTurbulenceModel_OWN_INC)
+hystrath_of_include_dirs(strathCompressibleTurbulenceModel_OF_INC
+  TurbulenceModels/turbulenceModels
+  thermophysicalModels/basic thermophysicalModels/radiation
+  thermophysicalModels/specie thermophysicalModels/solidThermo thermophysicalModels/solidSpecie
+  finiteVolume meshTools
+)
+
+add_library(strathCompressibleTurbulenceModel SHARED
+  ${HY}/src/TurbulenceModels/compressible/compressibleTurbulenceModel.C
+  ${HY}/src/TurbulenceModels/compressible/turbulentFluidThermoModels/turbulentFluidThermoModels.C
+  ${HY}/src/TurbulenceModels/compressible/turbulentFluidThermoModels/derivedFvPatchFields/wallFunctions/alphatWallFunctions/alphatWallFunction/alphatWallFunctionFvPatchScalarField.C
+  ${HY}/src/TurbulenceModels/compressible/turbulentFluidThermoModels/derivedFvPatchFields/wallFunctions/alphatWallFunctions/alphatJayatillekeWallFunction/alphatJayatillekeWallFunctionFvPatchScalarField.C
+  ${HY}/src/TurbulenceModels/compressible/turbulentFluidThermoModels/derivedFvPatchFields/wallFunctions/alphatWallFunctions/alphatPhaseChangeWallFunction/alphatPhaseChangeWallFunctionFvPatchScalarField.C
+)
+target_include_directories(strathCompressibleTurbulenceModel PUBLIC
+  ${strathCompressibleTurbulenceModel_OWN_INC} ${strathCompressibleTurbulenceModel_OF_INC}
+)
+target_link_libraries(strathCompressibleTurbulenceModel PUBLIC
+  strathReactionThermophysicalModels strathSpecie
+  turbulenceModels radiationModels solidThermo solidSpecie finiteVolume meshTools
+)
+
+# ============================================================================
 # 12. src/fvOptions  ->  libstrathFvOptions
 # ============================================================================
 
@@ -446,7 +577,7 @@ hystrath_of_include_dirs(strathFvOptions_OF_INC
   finiteVolume meshTools sampling fvOptions
   thermophysicalModels/solidThermo thermophysicalModels/specie thermophysicalModels/basic
   transportModels transportModels/compressible transportModels/incompressible
-  TurbulenceModels/turbulenceModels TurbulenceModels/compressible TurbulenceModels/incompressible
+  TurbulenceModels/turbulenceModels TurbulenceModels/incompressible
 )
 
 add_library(strathFvOptions SHARED
@@ -460,7 +591,7 @@ target_include_directories(strathFvOptions PUBLIC
 target_link_libraries(strathFvOptions PUBLIC
   strathSpecie strathReactionThermophysicalModels
   finiteVolume sampling meshTools fvOptions
-  turbulenceModels incompressibleTurbulenceModels compressibleTurbulenceModels
+  turbulenceModels incompressibleTurbulenceModels strathCompressibleTurbulenceModel
 )
 
 # ============================================================================
@@ -471,7 +602,7 @@ hystrath_own_include_dirs("${HY}/src/hTCModels" hTCModels_OWN_INC)
 hystrath_of_include_dirs(hTCModels_OF_INC
   finiteVolume meshTools transportModels/compressible
   thermophysicalModels/specie thermophysicalModels/basic
-  TurbulenceModels/turbulenceModels TurbulenceModels/compressible
+  TurbulenceModels/turbulenceModels
 )
 
 add_library(hTCModels SHARED
@@ -486,7 +617,7 @@ add_library(hTCModels SHARED
 target_include_directories(hTCModels PUBLIC ${hTCModels_OWN_INC} ${hTCModels_OF_INC})
 target_link_libraries(hTCModels PUBLIC
   strathSpecie strathReactionThermophysicalModels strathChemistryModel
-  finiteVolume compressibleTransportModels compressibleTurbulenceModels
+  finiteVolume compressibleTransportModels strathCompressibleTurbulenceModel
 )
 
 # ============================================================================
@@ -553,10 +684,13 @@ hystrath_own_include_dirs("${HY}/src/functionObjects/field" strathField_OWN_INC)
 hystrath_of_include_dirs(strathField_OF_INC
   finiteVolume meshTools lagrangian/basic lagrangian/distributionModels
   fileFormats sampling surfMesh thermophysicalModels/basic
-  transportModels/compressible
-  TurbulenceModels/turbulenceModels TurbulenceModels/incompressible TurbulenceModels/compressible
+  transportModels/compressible transportModels/incompressible
+  TurbulenceModels/turbulenceModels TurbulenceModels/incompressible
   fvAgglomerationMethods/pairPatchAgglomeration
 )
+# See the identical note above strathForces_OF_INC: turbulentTransportModel.H
+# needs the bare (non-lnInclude) transportModels parent directory too.
+list(APPEND strathField_OF_INC "${FOAM_SRC}/transportModels")
 
 add_library(strathFieldFunctionObjects SHARED
   ${HY}/src/functionObjects/field/frictionCoefficient/frictionCoefficient.C
@@ -577,16 +711,22 @@ target_link_libraries(strathFieldFunctionObjects PUBLIC
   strathReactionThermophysicalModels strathChemistryModel
   finiteVolume meshTools lagrangian distributionModels sampling surfMesh
   incompressibleTransportModels turbulenceModels compressibleTransportModels
-  incompressibleTurbulenceModels compressibleTurbulenceModels
+  incompressibleTurbulenceModels strathCompressibleTurbulenceModel
   pairPatchAgglomeration
 )
 
 hystrath_own_include_dirs("${HY}/src/functionObjects/forces" strathForces_OWN_INC)
 hystrath_of_include_dirs(strathForces_OF_INC
-  fileFormats transportModels transportModels/compressible
-  TurbulenceModels/turbulenceModels TurbulenceModels/incompressible TurbulenceModels/compressible
+  fileFormats transportModels/compressible transportModels/incompressible
+  TurbulenceModels/turbulenceModels TurbulenceModels/incompressible
   finiteVolume meshTools
 )
+# turbulentTransportModel.H does #include "incompressible/transportModel/
+# transportModel.H" - a relative path with subdirectories, not resolved via
+# lnInclude's flat symlink farm - so the bare (non-lnInclude) transportModels
+# parent directory must be on the include path too, matching the original
+# Make/options' bare "-I$(LIB_SRC)/transportModels".
+list(APPEND strathForces_OF_INC "${FOAM_SRC}/transportModels")
 
 add_library(strathForces SHARED
   ${HY}/src/functionObjects/forces/forces/forces.C
@@ -599,7 +739,7 @@ target_include_directories(strathForces PUBLIC
 target_link_libraries(strathForces PUBLIC
   strathSpecie strathReactionThermophysicalModels
   compressibleTransportModels incompressibleTransportModels
-  turbulenceModels incompressibleTurbulenceModels compressibleTurbulenceModels
+  turbulenceModels incompressibleTurbulenceModels strathCompressibleTurbulenceModel
   fileFormats finiteVolume meshTools
 )
 
@@ -629,7 +769,7 @@ target_link_libraries(hyTwoFoam PUBLIC
 
 hystrath_of_include_dirs(hy2Foam_OF_INC
   finiteVolume meshTools sampling ODE transportModels/compressible
-  thermophysicalModels/specie TurbulenceModels/turbulenceModels TurbulenceModels/compressible
+  thermophysicalModels/specie TurbulenceModels/turbulenceModels
   fvOptions
 )
 
@@ -637,6 +777,7 @@ add_executable(hy2Foam
   ${HY}/applications/solvers/compressible/hy2Foam/hy2Foam.C
 )
 target_include_directories(hy2Foam PRIVATE
+  ${HY}/applications/solvers/compressible/hy2Foam
   ${HY}/applications/solvers/compressible/hy2Foam/BCs
   ${hy2Foam_OF_INC}
   ${HY}/src/thermophysicalModels/strath/strathSpecie
@@ -657,8 +798,9 @@ target_link_libraries(hy2Foam PRIVATE
   diffusivityModels multiSpeciesTransportModels
   VTRelaxationModels VVRelaxationModels eVRelaxationModels relaxationTimeModels
   mfpModels rarefactionParameters mixingRules
-  compressibleTurbulenceModels hTCModels
+  strathCompressibleTurbulenceModel hTCModels
 )
+hystrath_link_pstream_dummy(hy2Foam)
 
 # ============================================================================
 # 18. applications/solvers/compressible/hy2MhdFoam  ->  hy2MhdFoam (executable)
@@ -668,6 +810,7 @@ add_executable(hy2MhdFoam
   ${HY}/applications/solvers/compressible/hy2MhdFoam/hy2MhdFoam.C
 )
 target_include_directories(hy2MhdFoam PRIVATE
+  ${HY}/applications/solvers/compressible/hy2MhdFoam
   ${HY}/applications/solvers/compressible/hy2Foam
   ${hy2Foam_OF_INC}
   ${HY}/src/thermophysicalModels/strath/strathSpecie
@@ -689,8 +832,9 @@ target_link_libraries(hy2MhdFoam PRIVATE
   diffusivityModels multiSpeciesTransportModels
   VTRelaxationModels VVRelaxationModels eVRelaxationModels relaxationTimeModels
   mfpModels rarefactionParameters mixingRules
-  compressibleTurbulenceModels hTCModels spbpuMhdModels
+  strathCompressibleTurbulenceModel hTCModels spbpuMhdModels
 )
+hystrath_link_pstream_dummy(hy2MhdFoam)
 
 # ============================================================================
 # 19. Mesh utilities (independent of the CFD physics above)

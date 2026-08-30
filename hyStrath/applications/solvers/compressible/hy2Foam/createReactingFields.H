@@ -52,5 +52,5 @@ autoPtr<multiSpeciesTransportModel> speciesDiffusion
     )
 );
 
-word speciesDiffusionName = thermo.transportDictionary().subDict("transportModels").lookup("multiSpeciesTransport");
+word speciesDiffusionName = thermo.transportDictionary().subDict("transportModels").get<word>("multiSpeciesTransport");
 

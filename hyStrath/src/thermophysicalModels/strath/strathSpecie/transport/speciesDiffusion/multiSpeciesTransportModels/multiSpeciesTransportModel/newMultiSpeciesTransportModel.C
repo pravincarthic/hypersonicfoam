@@ -41,7 +41,7 @@ Foam::multiSpeciesTransportModel::New
     
     Info<< "Loading the multispecies transport model:" << tab << partialModelName << "\n" << endl;
 
-    fvMeshConstructorTable::iterator cstrIter =
+    fvMeshConstructorTableType::iterator cstrIter =
         fvMeshConstructorTablePtr_->find(modelName);
 
     if (cstrIter == fvMeshConstructorTablePtr_->end())

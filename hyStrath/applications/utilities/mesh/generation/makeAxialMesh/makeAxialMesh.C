@@ -492,8 +492,8 @@ int main(int argc, char *argv[])
 	    offset=readScalar(rotationalDict["makeAxialOffset"]);
 	  }
 	} else {
-	  rotation=rotationalDict.lookup("rotationVector");
-	  origin=rotationalDict.lookup("originVector");
+	  rotation=rotationalDict.get<vector>("rotationVector");
+	  origin=rotationalDict.get<vector>("originVector");
 	}
         axisName=word(rotationalDict.lookup("makeAxialAxisPatch"));
 

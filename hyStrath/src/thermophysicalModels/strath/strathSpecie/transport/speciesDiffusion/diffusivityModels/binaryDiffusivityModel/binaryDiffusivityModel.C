@@ -118,7 +118,7 @@ Foam::autoPtr<Foam::binaryDiffusivityModel> Foam::binaryDiffusivityModel::New
                 .lookup("binaryDiffusivityModel")
          );
 
-    dictionaryConstructorTable::iterator cstrIter =
+    dictionaryConstructorTableType::iterator cstrIter =
         dictionaryConstructorTablePtr_->find(binaryDiffusivityModelTypeName);
 
     if (cstrIter == dictionaryConstructorTablePtr_->end())
@@ -157,7 +157,7 @@ Foam::autoPtr<Foam::binaryDiffusivityModel> Foam::binaryDiffusivityModel::New
                 .lookup("binaryDiffusivityModel")
          );
 
-    dictionaryConstructorTable::iterator cstrIter =
+    dictionaryConstructorTableType::iterator cstrIter =
         dictionaryConstructorTablePtr_->find(binaryDiffusivityModelTypeName);
 
     if (cstrIter == dictionaryConstructorTablePtr_->end())

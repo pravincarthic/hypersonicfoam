@@ -103,7 +103,7 @@ mhdModel::mhdModel(const rho2ReactionThermo& thermo)
     mhd_(true),
     hallEffect_(true),
     coeffs_(dictionary::null),
-    conductivity_(NULL)
+    conductivity_(nullptr)
 {
   Info << "Constructor 1 was used" << endl;
   const dictionary mhdProperties =
@@ -132,7 +132,7 @@ mhdModel::mhdModel
     mhd_(lookupOrDefault("mhd", true)),
     hallEffect_(lookupOrDefault("hallEffect", false)),
     coeffs_(subOrEmptyDict(type + "Coeffs")),
-    conductivity_(NULL)
+    conductivity_(nullptr)
 {
     if (readOpt() == IOobject::NO_READ)
     {
@@ -169,7 +169,7 @@ mhdModel::mhdModel
     mhd_(lookupOrDefault("mhd", true)),
     hallEffect_(lookupOrDefault("hallEffect", false)),
     coeffs_(subOrEmptyDict(type + "Coeffs")),
-    conductivity_(NULL)
+    conductivity_(nullptr)
 {
     Info <<"Constructor 3 was used" << endl;
     //*this <<= mhdProperties;

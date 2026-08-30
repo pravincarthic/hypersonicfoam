@@ -71,7 +71,7 @@ Foam::autoPtr<Foam::basicMfpModel> Foam::basicMfpModel::New
 {
     word basicMfpModelTypeName(dict.subDict("rarefiedParameters").lookup("mfpModel"));
 
-    dictionaryConstructorTable::iterator cstrIter =
+    dictionaryConstructorTableType::iterator cstrIter =
         dictionaryConstructorTablePtr_->find(basicMfpModelTypeName);
 
     if (cstrIter == dictionaryConstructorTablePtr_->end())

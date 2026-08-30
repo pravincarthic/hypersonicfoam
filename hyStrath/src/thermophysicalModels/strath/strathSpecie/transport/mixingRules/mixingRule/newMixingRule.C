@@ -44,7 +44,7 @@ Foam::mixingRule::New
     Info<< "\nLoading the transport mixing rule:" << tab << partialMixingRuleName 
         << "\n" << endl;
 
-    fvMeshConstructorTable::iterator cstrIter =
+    fvMeshConstructorTableType::iterator cstrIter =
         fvMeshConstructorTablePtr_->find(mixingRuleName);
 
     if (cstrIter == fvMeshConstructorTablePtr_->end())

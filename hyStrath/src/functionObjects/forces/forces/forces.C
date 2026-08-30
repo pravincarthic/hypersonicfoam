@@ -684,7 +684,7 @@ void Foam::functionObjects::forces::writeBinnedForceMoment
 
     Ostream& os = osPtr();
 
-    writeTime(os);
+    writeCurrentTime(os);
 
     forAll(f[0], i)
     {
@@ -886,7 +886,13 @@ bool Foam::functionObjects::forces::read(const dictionary& dict)
     // specified directly, from coordinate system, or implicitly (0 0 0)
     if (!dict.readIfPresent<point>("CofR", coordSys_.origin()))
     {
-        coordSys_ = coordinateSystem(obr_, dict);
+        coordSys_ = coordinateSystem::New
+        (
+            word::null,
+            obr_,
+            dict,
+            IOobjectOption::READ_IF_PRESENT
+        )();
         localSystem_ = true;
     }
 
