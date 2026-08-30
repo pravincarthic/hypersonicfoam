@@ -87,7 +87,7 @@ Foam::autoPtr<Foam::VTRelaxationModel> Foam::VTRelaxationModel::New
 {
     word VTRelaxationModelTypeName(dict1.subDict("thermalRelaxationModels").subDict("VT").lookup("model"));
 
-    dictionaryConstructorTable::iterator cstrIter =
+    dictionaryConstructorTableType::iterator cstrIter =
         dictionaryConstructorTablePtr_->find(VTRelaxationModelTypeName);
 
     if (cstrIter == dictionaryConstructorTablePtr_->end())

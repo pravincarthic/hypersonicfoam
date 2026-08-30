@@ -44,10 +44,12 @@ inline Foam::Arrhenius2ReactionRate::Arrhenius2ReactionRate
     Istream& is
 )
 :
-    A_(readScalar(is.readBegin("Arrhenius2ReactionRate(Istream&)"))),
-    beta_(readScalar(is)),
-    Ta_(readScalar(is))
+    A_(0),
+    beta_(0),
+    Ta_(0)
 {
+    is.readBegin("Arrhenius2ReactionRate(Istream&)");
+    is >> A_ >> beta_ >> Ta_;
     is.readEnd("Arrhenius2ReactionRate(Istream&)");
 }
 

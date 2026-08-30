@@ -124,11 +124,33 @@ add_compile_options(
   -Wall -Wextra -Wold-style-cast -Wnon-virtual-dtor
   -Wno-unused-parameter -Wno-invalid-offsetof -Wno-attributes -Wno-unknown-pragmas
   $<$<CONFIG:Release>:-O2>
-  $<$<CONFIG:RelWithDebInfo>:-O2;-g>
-  $<$<CONFIG:Debug>:-O0;-g>
+  $<$<CONFIG:RelWithDebInfo>:-O2>
+  $<$<CONFIG:RelWithDebInfo>:-g>
+  $<$<CONFIG:Debug>:-O0>
+  $<$<CONFIG:Debug>:-g>
 )
 
+# CMake's own per-build-type defaults (e.g. Release => -O3 -DNDEBUG) would
+# stack on top of the flags above and diverge from wmake's actual -O2 (no
+# -DNDEBUG) Opt build; blank them out so add_compile_options() above is the
+# only source of optimisation/debug flags.
+foreach(_cfg RELEASE RELWITHDEBINFO DEBUG MINSIZEREL)
+  set(CMAKE_CXX_FLAGS_${_cfg} "")
+endforeach()
+
 link_directories("${FOAM_LIBBIN}" "${FOAM_USER_LIBBIN}")
+
+# wmake injects these into every single compile/link via PROJECT_INC /
+# PROJECT_LIBS in wmake/makefiles/general - not via any module's own
+# Make/options - since every OpenFOAM library and application needs
+# OpenFOAM's own core headers (word.H, List.H, scalar.H, ...) and
+# libOpenFOAM.so itself. Verified directly against that file in the real
+# v2412 release rather than assumed.
+include_directories(
+  "${FOAM_SRC}/OpenFOAM/lnInclude"
+  "${FOAM_SRC}/OSspecific/POSIX/lnInclude"
+)
+link_libraries(OpenFOAM dl)
 
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${FOAM_USER_LIBBIN}")
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${FOAM_USER_APPBIN}")
@@ -151,12 +173,35 @@ set(HY "${CMAKE_CURRENT_SOURCE_DIR}")
 # module is added directly as an include directory - this reproduces the
 # same "any header, anywhere in the module, is reachable by bare name"
 # effect that lnInclude gives wmake builds.
+#
+# A handful of directories in this tree are stale/alternate copies that
+# were never wired into any Make/files (e.g. chemistryModel.Shat/,
+# reaction/Reactions.Shat/, mhdModel/submodels/conductivityModels/1/ - see
+# PORTING_NOTES.md). They must be excluded here: several of them define
+# headers with the exact same name as their live counterpart (e.g. both
+# reaction/Reactions/Reaction/Reaction2.H and
+# reaction/Reactions.Shat/Reaction/Reaction2.H exist), so if both ended up
+# on the include path which one wins would depend on directory-glob order
+# rather than which one is actually built - silently compiling the wrong,
+# stale header.
+set(HYSTRATH_DEAD_DIR_PATTERNS
+  "\\.Shat($|/)"
+  "/conductivityModels/1($|/)"
+)
 function(hystrath_own_include_dirs root outvar)
   file(GLOB_RECURSE _headers "${root}/*.H")
   set(_dirs "")
   foreach(_h ${_headers})
-    get_filename_component(_d "${_h}" DIRECTORY)
-    list(APPEND _dirs "${_d}")
+    set(_dead FALSE)
+    foreach(_pat ${HYSTRATH_DEAD_DIR_PATTERNS})
+      if(_h MATCHES "${_pat}")
+        set(_dead TRUE)
+      endif()
+    endforeach()
+    if(NOT _dead)
+      get_filename_component(_d "${_h}" DIRECTORY)
+      list(APPEND _dirs "${_d}")
+    endif()
   endforeach()
   if(_dirs)
     list(REMOVE_DUPLICATES _dirs)

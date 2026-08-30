@@ -46,11 +46,13 @@ inline Foam::ShatalovReactionRate::ShatalovReactionRate
     Istream& is
 )
 :
-    A_(readScalar(is.readBegin("ShatalovReactionRate(Istream&)"))),
-    beta_(readScalar(is)),
-    Th_(readScalar(is)),
-    Ta_(readScalar(is))
+    A_(0),
+    beta_(0),
+    Th_(0),
+    Ta_(0)
 {
+    is.readBegin("ShatalovReactionRate(Istream&)");
+    is >> A_ >> beta_ >> Th_ >> Ta_;
     is.readEnd("ShatalovReactionRate(Istream&)");
 }
 

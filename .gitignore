@@ -34,3 +34,6 @@
 # User
 thesis/
 misc/
+
+# CMake build directory
+hyStrath/build/

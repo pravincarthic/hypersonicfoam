@@ -57,7 +57,7 @@ Foam::relaxationTimeModelHE::New
         Info<< "Loading the h-e relaxation time model" << tab << partialHEModelName << "\n" << endl; 
     }
 
-    fvMeshConstructorTable::iterator cstrIter =
+    fvMeshConstructorTableType::iterator cstrIter =
         fvMeshConstructorTablePtr_->find(HEModelName);
 
     if (cstrIter == fvMeshConstructorTablePtr_->end())

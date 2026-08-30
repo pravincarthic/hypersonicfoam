@@ -44,10 +44,12 @@ inline Foam::HoffertLienReactionRate::HoffertLienReactionRate
     Istream& is
 )
 :
-    A_(readScalar(is.readBegin("HoffertLienReactionRate(Istream&)"))),
-    beta_(readScalar(is)),
-    Ta_(readScalar(is))
+    A_(0),
+    beta_(0),
+    Ta_(0)
 {
+    is.readBegin("HoffertLienReactionRate(Istream&)");
+    is >> A_ >> beta_ >> Ta_;
     is.readEnd("HoffertLienReactionRate(Istream&)");
 }
 

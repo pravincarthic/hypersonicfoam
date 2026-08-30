@@ -58,7 +58,7 @@ Foam::relaxationTimeModel::New
         Info<< "Loading the V-T relaxation time model:" << tab << partialVTName << "\n" << endl;    
     }
 
-    fvMeshConstructorTable::iterator cstrIter =
+    fvMeshConstructorTableType::iterator cstrIter =
         fvMeshConstructorTablePtr_->find(VTModelName);
 
     if (cstrIter == fvMeshConstructorTablePtr_->end())
