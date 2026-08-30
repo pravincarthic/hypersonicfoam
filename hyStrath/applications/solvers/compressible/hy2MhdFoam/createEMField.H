@@ -10,8 +10,8 @@ const dictionary mhdProperties =
     )()
 );
 
-const word mhdType = mhdProperties.lookup("mhdModel");
-const word conductivityType = mhdProperties.lookup("conductivityModel");
+const word mhdType = mhdProperties.get<word>("mhdModel");
+const word conductivityType = mhdProperties.get<word>("conductivityModel");
 Info << "MHD model: "<< mhdType << endl;
 Info << "Electrical conductivity model: " << conductivityType << endl;
 

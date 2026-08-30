@@ -55,6 +55,7 @@ bool run
 int main(int argc, char *argv[])
 {
     #define NO_CONTROL
+    #define CREATE_FIELDS hy2Foam_createFields.H
     #include "postProcess.H"
     
     #include "setRootCase.H"

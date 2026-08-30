@@ -69,7 +69,7 @@ void Foam::GuptaMR<ThermoType>::piOmegaNeutralInit(label no, label i, label j)
     word year = word::null;
     word data = word::null;
     word typeOmega = numberToString(no+1)+numberToString(no+1);
-    word omegaData = dict_.subDict("transportModels").lookup("binaryDiffusivityModel");
+    word omegaData = dict_.subDict("transportModels").get<word>("binaryDiffusivityModel");
 
     if(omegaData == "GuptaO" or omegaData == "GuptaD")
     {

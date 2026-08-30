@@ -68,7 +68,7 @@ Foam::hTC2Models::rho2HTCModel::New
 
     const label tempOpen = hTempTypeName.find('<');
 
-    const word className = hTempTypeName(0, tempOpen);
+    const word className = hTempTypeName.substr(0, tempOpen);
 
     return autoPtr<rho2HTCModel> (cstrIter()(className, mesh));
 }

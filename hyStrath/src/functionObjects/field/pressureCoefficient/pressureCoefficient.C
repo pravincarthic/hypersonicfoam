@@ -27,6 +27,7 @@ License
 #include "volFields.H"
 #include "turbulenceModel.H"
 #include "turbulentFluidThermoModel.H"
+#include "multi2Thermo.H"
 #include "wallFvPatch.H"
 #include "addToRunTimeSelectionTable.H"
 

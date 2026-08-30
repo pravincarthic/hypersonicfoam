@@ -25,6 +25,7 @@ License
 
 #include "multi2VariableHeatTransfer.H"
 #include "turbulentFluidThermoModel.H"
+#include "multi2Thermo.H"
 #include "addToRunTimeSelectionTable.H"
 
 // * * * * * * * * * * * * * * Static Data Members * * * * * * * * * * * * * //
