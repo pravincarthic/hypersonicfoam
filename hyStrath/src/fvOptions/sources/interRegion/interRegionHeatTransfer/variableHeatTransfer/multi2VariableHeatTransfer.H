@@ -22,19 +22,29 @@ License
     along with OpenFOAM.  If not, see <http://www.gnu.org/licenses/>.
 
 Class
-    Foam::fv::constantHeatTransfer
+    Foam::fv::multi2VariableHeatTransfer
 
 Group
     grpFvOptionsSources
 
 Description
-    Constant heat transfer model. htcConst [W/m2/K] and area/volume [1/m]
-    must be provided.
+    Variable heat transfer model depending on local values. The area of contact
+    between regions (area) must be provided. The Nu number is calculated as:
+
+        Nu = a*pow(Re, b)*pow(Pr, c)
+
+    and the heat transfer coefficient as:
+
+        htc = Nu*K/ds
+
+    where:
+        K is the heat conduction
+        ds is the strut diameter
 
 \*---------------------------------------------------------------------------*/
 
-#ifndef constantHeatTransfer_H
-#define constantHeatTransfer_H
+#ifndef multi2VariableHeatTransfer_H
+#define multi2VariableHeatTransfer_H
 
 #include "interRegionHeatTransferModel.H"
 #include "autoPtr.H"
@@ -47,10 +57,10 @@ namespace fv
 {
 
 /*---------------------------------------------------------------------------*\
-                    Class constantHeatTransfer Declaration
+                    Class multi2VariableHeatTransfer Declaration
 \*---------------------------------------------------------------------------*/
 
-class constantHeatTransfer
+class multi2VariableHeatTransfer
 :
     public interRegionHeatTransferModel
 {
@@ -58,23 +68,34 @@ private:
 
     // Private data
 
-        //- Constant heat transfer coefficient [W/m2/K]
-        autoPtr<volScalarField> htcConst_;
+        //- Name of neighbour velocity field; default = U
+        word UNbrName_;
 
-        //- Area per unit volume of heat exchanger [1/m]
+        //- Model constants
+        scalar a_;
+        scalar b_;
+        scalar c_;
+
+        //- Strut diameter
+        scalar ds_;
+
+        //- Fluid Prandt number
+        scalar Pr_;
+
+        //- Area per unit volume of heat exchanger
         autoPtr<volScalarField> AoV_;
 
 
 public:
 
     //- Runtime type information
-      TypeName("constantHeatTransfer");
+    TypeName("multi2VariableHeatTransfer");
 
 
     // Constructors
 
         //- Construct from dictionary
-        constantHeatTransfer
+        multi2VariableHeatTransfer
         (
             const word& name,
             const word& modelType,
@@ -84,7 +105,7 @@ public:
 
 
     //- Destructor
-    virtual ~constantHeatTransfer();
+    virtual ~multi2VariableHeatTransfer();
 
 
     // Public Functions
@@ -96,7 +117,7 @@ public:
         // IO
 
             //- Read dictionary
-            virtual bool read(const dictionary& dict);
+            virtual bool read(const dictionary& dict) ;
 };
 
 

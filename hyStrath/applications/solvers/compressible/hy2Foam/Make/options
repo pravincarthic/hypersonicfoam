@@ -3,6 +3,7 @@ EXE_INC = \
     -I$(LIB_SRC)/finiteVolume/lnInclude \
     -I$(LIB_SRC)/meshTools/lnInclude \
     -I$(WM_PROJECT_USER_DIR)/src/fvOptions/lnInclude \
+    -I$(LIB_SRC)/fvOptions/lnInclude \
     -I$(LIB_SRC)/sampling/lnInclude \
     -I$(LIB_SRC)/ODE/lnInclude \
     -I$(LIB_SRC)/transportModels/compressible/lnInclude \
@@ -16,7 +17,7 @@ EXE_INC = \
     -I$(WM_PROJECT_USER_DIR)/src/thermophysicalModels/strath/strathSpecie/rarefied/rarefactionParameters/lnInclude \
     -I$(WM_PROJECT_USER_DIR)/src/thermophysicalModels/strath/strathSpecie/transport/mixingRules/lnInclude \
     -I$(LIB_SRC)/TurbulenceModels/turbulenceModels/lnInclude \
-    -I$(WM_PROJECT_USER_DIR)/src/TurbulenceModels/compressible/lnInclude \
+    -I$(LIB_SRC)/TurbulenceModels/compressible/lnInclude \
     -I$(WM_PROJECT_USER_DIR)/src/hTCModels/lnInclude
 
 EXE_LIBS = \
@@ -25,6 +26,7 @@ EXE_LIBS = \
     -lfiniteVolume \
     -lmeshTools \
     -lstrathFvOptions \
+    -lfvOptions \
     -lODE \
     -lcompressibleTransportModels \
     -lstrathSpecie \
@@ -39,5 +41,5 @@ EXE_LIBS = \
     -lmfpModels \
     -lrarefactionParameters \
     -lmixingRules \
-    -lstrathCompressibleTurbulenceModels \
+    -lcompressibleTurbulenceModels \
     -lhTCModels

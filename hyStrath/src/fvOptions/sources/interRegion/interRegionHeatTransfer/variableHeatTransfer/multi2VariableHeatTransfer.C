@@ -23,7 +23,7 @@ License
 
 \*---------------------------------------------------------------------------*/
 
-#include "variableHeatTransfer.H"
+#include "multi2VariableHeatTransfer.H"
 #include "turbulentFluidThermoModel.H"
 #include "addToRunTimeSelectionTable.H"
 
@@ -33,11 +33,11 @@ namespace Foam
 {
 namespace fv
 {
-    defineTypeNameAndDebug(variableHeatTransfer, 0);
+    defineTypeNameAndDebug(multi2VariableHeatTransfer, 0);
     addToRunTimeSelectionTable
     (
         option,
-        variableHeatTransfer,
+        multi2VariableHeatTransfer,
         dictionary
     );
 }
@@ -46,7 +46,7 @@ namespace fv
 
 // * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
 
-Foam::fv::variableHeatTransfer::variableHeatTransfer
+Foam::fv::multi2VariableHeatTransfer::multi2VariableHeatTransfer
 (
     const word& name,
     const word& modelType,
@@ -91,13 +91,13 @@ Foam::fv::variableHeatTransfer::variableHeatTransfer
 
 // * * * * * * * * * * * * * * * * Destructor  * * * * * * * * * * * * * * * //
 
-Foam::fv::variableHeatTransfer::~variableHeatTransfer()
+Foam::fv::multi2VariableHeatTransfer::~multi2VariableHeatTransfer()
 {}
 
 
 // * * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * //
 
-void Foam::fv::variableHeatTransfer::calculateHtc()
+void Foam::fv::multi2VariableHeatTransfer::calculateHtc()
 {
     const fvMesh& nbrMesh =
         mesh_.time().lookupObject<fvMesh>(nbrRegionName());
@@ -126,7 +126,7 @@ void Foam::fv::variableHeatTransfer::calculateHtc()
 }
 
 
-bool Foam::fv::variableHeatTransfer::read(const dictionary& dict)
+bool Foam::fv::multi2VariableHeatTransfer::read(const dictionary& dict)
 {
     if (interRegionHeatTransferModel::read(dict))
     {
