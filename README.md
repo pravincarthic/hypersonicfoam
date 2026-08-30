@@ -7,6 +7,8 @@
 
 HypersonicFOAM is an extended suite of solvers for hypersonic gas dynamics, developed within the OpenFOAM framework. It builds upon the foundations of [hyStrath](https://github.com/vincentcasseau/hyStrath), adopting a modular and object-oriented C++ approach to enable advanced modeling of reacting, ionizing, and magnetized flows.
 
+This is a fork to adapt `hyStrath` from OpenFoam v1706 to v2412. Why 2412 and not 2512 or later? Because 2412 is actively used by many and upgrade may not be feasible for them.
+
 ## Features and Capabilities
 
 ### **hyStrath**
