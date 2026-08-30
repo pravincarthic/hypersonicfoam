@@ -1,7 +1,7 @@
 /* This library used to vendor a full copy of OpenFOAM's own fvOptions
    sources/constraints/corrections (stock, unmodified) purely to carry one
    change: variableHeatTransfer adapted to look up the strath multi2Thermo/
-   compressible::momentumTransportModel objects instead of the stock
+   compressible::turbulenceModel objects instead of the stock
    basicThermo/turbulenceModel. OpenFOAM v2412 ships the stock fvOptions
    library natively (-lfvOptions), so the port keeps only that one adapted
    class here, renamed to multi2VariableHeatTransfer to avoid clashing with

@@ -25,7 +25,7 @@ License
 
 #include "frictionCoefficient.H"
 #include "volFields.H"
-#include "momentumTransportModel.H"
+#include "turbulenceModel.H"
 #include "turbulentFluidThermoModel.H"
 #include "wallFvPatch.H"
 #include "addToRunTimeSelectionTable.H"
@@ -155,17 +155,17 @@ bool Foam::functionObjects::frictionCoefficient::execute()
             lookupObject<volScalarField>(typeName)
         );
 
-    if (foundObject<momentumTransportModel>(momentumTransportModel::propertiesName))
+    if (foundObject<turbulenceModel>(turbulenceModel::propertiesName))
     {
         if (foundObject<multi2Thermo>(multi2Thermo::dictName))
         {    
             volScalarField::Boundary& frictionCoefficientBf =
                 frictionCoefficient.boundaryFieldRef();
 
-            const momentumTransportModel& model =
-                lookupObject<momentumTransportModel>
+            const turbulenceModel& model =
+                lookupObject<turbulenceModel>
                 (
-                    momentumTransportModel::propertiesName
+                    turbulenceModel::propertiesName
                 );
                 
             const multi2Thermo& thermo =

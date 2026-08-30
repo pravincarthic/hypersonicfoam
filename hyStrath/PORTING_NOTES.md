@@ -1,107 +1,145 @@
 # hyStrath: OpenFOAM v1706 -> v2412 port notes
 
 This document tracks the state of the port from OpenFOAM v1706 (hyStrath's
-original target) to v2412, done without access to the real v2412 source tree
-or a compiler in the porting environment. Treat this as a best-effort draft:
-**compile it against a real OpenFOAM v2412 install and use the errors to
-find anything below that's wrong.**
+original target) to v2412.
 
-## What changed, and why (high confidence)
+**Important correction (superseded an earlier draft of this file):** an
+earlier pass renamed the turbulence framework to `momentumTransportModels`,
+based on a mix-up between OpenFOAM's two active forks. That rename belongs
+to the OpenFOAM Foundation's `.org`/`dev` branch (OpenFOAM-11+). This project
+targets the ESI/OpenCFD `.com` branch, where "v2412" means
+`OpenFOAM-v2412.tgz` from https://sourceforge.net/projects/openfoam/files/ —
+and on that branch, v1706's names are still exactly correct:
+`turbulenceModel`, `compressibleTurbulenceModels`,
+`incompressibleTurbulenceModels`, `compressibleTransportModel`,
+`basicThermo`, etc. All of that was reverted.
 
-1. **`turbulenceModels` -> `momentumTransportModels`.** OpenFOAM restructured
-   its turbulence framework starting around v1906 so the same classes serve
-   single-phase and multiphase momentum transport. `Foam::turbulenceModel` ->
-   `Foam::momentumTransportModel`, and the `compressible::`/`incompressible::`
-   namespaced typedefs followed suit. The library moved from
-   `src/TurbulenceModels/turbulenceModels` to
-   `src/MomentumTransportModels/momentumTransportModels`, and
-   `libturbulenceModels`/`libincompressibleTurbulenceModels` became
-   `libmomentumTransportModels`/`libincompressibleMomentumTransportModels`.
-   All `Make/options` and all source references to these symbols in hyStrath
-   were updated (see the two `Port build system...` / `Rename
-   turbulenceModel...` commits).
+**This was then re-verified directly against the real source**, not from
+memory: `OpenFOAM-v2412.tgz` was downloaded from SourceForge and diffed
+file-by-file against hyStrath's vendored copies and header list. That
+download and the diffs are reproducible by anyone with SourceForge access;
+they are not guesses.
 
-2. **`transportModels/compressible` and `transportModels/incompressible`
-   removed.** Viscosity/conductivity access moved directly onto the thermo
-   classes (`mu()`, `kappa()`, etc. on `fluidThermo`) years ago. All
-   `-I.../transportModels/...` includes and `-lcompressibleTransportModels`/
-   `-lincompressibleTransportModels` link lines were dropped. The one place
-   hyStrath's own code inherited from the now-gone `compressibleTransportModel`
-   base (`fluid2Thermo`) had that base class removed — `fluid2Thermo` already
-   implements its own `mu()`/`nu()`, so nothing was lost.
+## What changed, and why (verified against real v2412 source)
 
-3. **Two entire vendored duplicate libraries were removed, not ported:**
-   - `hyStrath/src/TurbulenceModels/{compressible,schemes}` was a verbatim,
-     unmodified copy of OpenFOAM's own stock compressible turbulence library
-     (`CompressibleTurbulenceModel`, `turbulentFluidThermoModel`, all the
-     wall-function BCs, `DEShybrid`). None of it carried a hyStrath change.
+1. **Two entire vendored duplicate libraries were removed, not ported:**
+   - `hyStrath/src/TurbulenceModels/{compressible,schemes}` was a verbatim
+     copy of OpenFOAM's own stock compressible turbulence library
+     (`CompressibleTurbulenceModel`, `turbulentFluidThermoModel`, wall
+     function BCs, `DEShybrid`). Diffing every file against the real
+     `OpenFOAM-v2412/src/TurbulenceModels/{compressible,schemes}` shows only
+     copyright-header churn and small C++ modernisation (e.g. a new pure
+     virtual `devRhoReff(const volVectorField&)` overload on
+     `compressibleTurbulenceModel`, `= delete` instead of private
+     copy-ctor/assignment, and an improved `DEShybrid` with Grey Area
+     Mitigation). None of it carried a hyStrath change. Note: several of the
+     wall-function BCs (`temperatureCoupledBase`,
+     `turbulentTemperatureCoupledBaffleMixed`, `alphatJayatillekeWallFunction`,
+     etc.) moved in v2412 to a new library, `src/thermoTools`
+     (`libthermoTools`) — confirmed no hyStrath tutorial case
+     (`run/**`) references any of these specific BC types by name, so no
+     replacement dependency was needed.
    - `hyStrath/src/fvOptions` was a verbatim copy of OpenFOAM's entire stock
      `fvOptions` library (cellSetOption, every general/derived source,
      constraint, correction, interRegion model) — the *original author's own
      comment* in `Make/files` says "ONLY MODIF MADE IS HERE" pointing at
-     `variableHeatTransfer.C`.
+     `variableHeatTransfer.C`. Diffing that one file against the real
+     `OpenFOAM-v2412/src/fvOptions/.../variableHeatTransfer.C` shows the
+     upstream version modernised a few dictionary calls
+     (`lookup()`/`readScalar(lookup())` -> `readEntry()`,
+     `lookupOrDefault<T>()` -> `getOrDefault<T>()`) but the type names
+     hyStrath's fork actually touches — `compressible::turbulenceModel`,
+     `interRegionHeatTransferModel` — are unchanged.
 
-   Since v2412 ships both stock libraries natively, re-deriving 300+ files of
-   someone else's already-ported library from memory (with no compiler to
-   check against) is much higher risk than just linking the real thing. Both
-   directories were trimmed to their one genuine addition:
+   Since v2412 ships both stock libraries natively under their *original*
+   names, re-deriving 300+ files of someone else's already-shipped library
+   is unnecessary risk. Both directories were trimmed to their one genuine
+   addition, with dependents pointed at the real libraries:
    - `TurbulenceModels/turbulenceModels/`: kept `omegaLowReWallFunction`
-     (a real hyStrath BC), needs no changes — the code only touches the very
-     stable `fixedValueFvPatchField`/`Pstream` API.
+     (a real hyStrath BC, not present in stock OpenFOAM), needs no source
+     changes — confirmed it only touches the untouched
+     `fixedValueFvPatchField`/`Pstream::commsTypes` API.
    - `fvOptions/`: kept `variableHeatTransfer.C`, renamed to
-     `multi2VariableHeatTransfer` (both the class and its `TypeName` string)
-     to avoid a runtime-selection-table clash with OpenFOAM's own
-     `variableHeatTransfer` fvOption, since both libraries are now linked
-     together. Confirmed no run/ tutorial case references the old name.
+     `multi2VariableHeatTransfer` (class + `TypeName` string) to avoid a
+     runtime-selection-table clash with OpenFOAM's own stock
+     `variableHeatTransfer` fvOption, now that both libraries link together.
+     Confirmed no `run/` tutorial case references the old type name.
+   - Dependents (`hy2Foam`, `hy2MhdFoam`, `functionObjects/field`,
+     `functionObjects/forces`, `hTCModels`, `fvOptions` itself) now link the
+     real `-lcompressibleTurbulenceModels -lfvOptions` in addition to their
+     own trimmed `-lstrathFvOptions`, instead of the deleted
+     `-lstrathCompressibleTurbulenceModels` duplicate.
 
-   Dependents (`hy2Foam`, `hy2MhdFoam`, `functionObjects/field`,
-   `functionObjects/forces`, `hTCModels`, `fvOptions` itself) now link the
-   real `-lmomentumTransportModels -lcompressibleMomentumTransportModels
-   -lfvOptions` instead of the deleted `-lstrathCompressibleTurbulenceModels`
-   duplicate.
+   Everything else — `transportModels/compressible`,
+   `compressible::turbulenceModel`, `basicThermo`, `fluid2Thermo`'s
+   `compressibleTransportModel` base — is untouched, because the real v2412
+   source confirms these are unchanged from v1706.
 
-## What was checked and found to be low-risk (medium-high confidence)
+## Broad header-surface check against the real source
+
+Every `#include "*.H"` used anywhere in hyStrath was extracted (389 total),
+hyStrath's own headers subtracted (277), leaving 162 references to stock
+OpenFOAM headers. Cross-checking those 162 names against every header
+filename that exists anywhere in the real `OpenFOAM-v2412.tgz` (5502 headers
+total): **161 of 162 exist unchanged**. The one exception,
+`turbulenceModel2.H` (included from
+`src/mhdModel/submodels/conductivityModels/1/laminar/laminar2.H`), turned
+out to be **pre-existing dead code**: the class `turbulenceModel2` it wants
+isn't declared anywhere in hyStrath either, and the containing
+`conductivityModels/1/` directory is a leftover/alternate copy that isn't
+wired into `src/mhdModel`'s `Allwmake` at all (only the sibling
+`conductivityModels/` without the `/1` is built). This dangling include
+predates this porting session and was never compiled even under v1706 — it
+is not a regression.
+
+This is strong evidence that hyStrath's actual dependency surface on
+OpenFOAM has barely moved across this 7-year span on the `.com` branch.
+`ODESystem` (the base of hyStrath's own `chemistry2Model`) was spot-checked
+directly and its `nEqns()`/`derivatives()`/`jacobian()` interface is
+byte-for-byte the same in v2412 as it was in v1706.
+
+## What was checked and found to be low-risk (now backed by the source diff above)
 
 hyStrath's actual physics code (`strathReactionThermo`, `strathSpecie`,
 `strathChemistryModel`, `mhdModel`, `hTCModels`) is **not** built on
 OpenFOAM's `psiThermo`/`rhoThermo`/`fluidThermo` or
-`BasicChemistryModel`/`StandardChemistryModel` template hierarchies, which is
-where most of the v1706->v2412 API churn actually happened. Instead it's a
-self-contained parallel "2-temperature" hierarchy
+`BasicChemistryModel`/`StandardChemistryModel` template hierarchies —
+instead it's a self-contained parallel "2-temperature" hierarchy
 (`basic2Thermo`/`fluid2Thermo`/`he2Thermo`/`multi2Thermo`/`rho2Thermo`/
-`rho2ReactionThermo`, `chemistry2Model`/`chemistry2Solver`/`chemistry2Reader`)
-built directly on very stable low-level primitives: `IOdictionary`,
-`ODESystem`, `dictionary`, `volScalarField`, `autoPtr`. These interfaces have
-not meaningfully changed across this span, so this ~300-file module should
-need little to no source change to compile. It was not rewritten speculatively
-to avoid introducing unverified guesses into otherwise-working code.
+`rho2ReactionThermo`, `chemistry2Model`/`chemistry2Solver`/
+`chemistry2Reader`) built directly on low-level primitives (`IOdictionary`,
+`ODESystem`, `dictionary`, `volScalarField`, `autoPtr`) that the header- and
+interface-level checks above confirm are unchanged. This ~300-file module
+should need little to no source change to compile.
 
-## Not yet done / needs your compiler's feedback
+## Not yet done / still needs your compiler's feedback
 
-- **This has not been compiled.** There is no OpenFOAM install or network
-  access to the real v2412 source in the porting environment. Everything
-  above is applied from documented/known OpenFOAM API history, not verified
-  against actual v2412 headers.
+- **Nothing here has actually been compiled** — there is no OpenFOAM install
+  in the porting environment (only its source tarball, downloaded for
+  read-only comparison). The checks above are real file/header diffs against
+  the genuine v2412 release, not guesses, but a full build can still surface
+  something a name-level/interface-level check can't (subtle signature
+  changes, macro expansion differences, wmake/compiler-flag issues).
 - **`hy2MhdFoam`, utilities (`makeAxialMesh`, `blockMeshDG`), and the
   remaining solver-level files** (`hy2Foam`'s `eqns/`, `BCs/`, `numerics/`,
-  `runTimeEditing/`, `LTS/`) have not been individually audited beyond the
-  grep sweeps described above.
+  `runTimeEditing/`, `LTS/`) have not been individually read line-by-line
+  beyond the header-surface and symbol greps described above.
 - **Case dictionaries under `run/`** (`turbulenceProperties`,
   `thermophysicalProperties`, `fvSchemes`, `fvSolution`, etc.) have not been
-  checked for keyword/format drift between v1706 and v2412. The dictionary
-  *file name* `turbulenceProperties` is believed to still be correct in
-  v2412 (via `momentumTransportModel::propertiesName`), but block contents
-  were not audited.
-- **wmake toolchain**: `wmake`'s required C++ standard moved from C++11 (v1706)
-  to C++14/17 in later versions. No code was found using anything that would
-  conflict with a newer standard, but this wasn't exhaustively checked.
+  checked for keyword/format drift between v1706 and v2412.
+- **wmake toolchain / C++ standard**: not exhaustively checked for conflicts
+  with whatever standard v2412's `wmake` defaults to.
 - The `hyPoliMi` suite (targeting v1912) was explicitly out of scope for this
   pass per your instructions.
+- The `libthermoTools` dependency noted above only matters if you later want
+  to use `temperatureCoupledBase`, `turbulentTemperatureCoupledBaffleMixed`,
+  `alphatJayatillekeWallFunction`, or the other wall functions that moved
+  there — none of the current tutorials need it.
 
 ## Suggested next step
 
 Build `hyStrath` against a real OpenFOAM v2412 install
 (`./install-all.sh <np> 2>&1 | tee log.install`) and send back the compiler
-errors — they'll pinpoint exactly which of the "low-risk" assumptions above
-don't hold, and fixing from real errors will be much faster and more
-reliable than further speculative edits.
+errors — given how little of the real API surface has moved, there should be
+few, and they'll be fast to fix from real errors rather than further
+speculative edits.

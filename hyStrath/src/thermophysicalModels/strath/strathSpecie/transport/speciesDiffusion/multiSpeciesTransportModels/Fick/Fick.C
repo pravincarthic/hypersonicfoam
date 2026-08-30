@@ -79,7 +79,7 @@ template<class ThermoType>
 Foam::Fick<ThermoType>::Fick
 (
     rho2ReactionThermo& thermo,
-    const compressible::momentumTransportModel& turbulence
+    const compressible::turbulenceModel& turbulence
 )
 :
     multiSpeciesTransportModel(thermo, turbulence),

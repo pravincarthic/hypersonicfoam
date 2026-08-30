@@ -102,10 +102,10 @@ void Foam::fv::multi2VariableHeatTransfer::calculateHtc()
     const fvMesh& nbrMesh =
         mesh_.time().lookupObject<fvMesh>(nbrRegionName());
 
-    const compressible::momentumTransportModel& nbrTurb =
-        nbrMesh.lookupObject<compressible::momentumTransportModel>
+    const compressible::turbulenceModel& nbrTurb =
+        nbrMesh.lookupObject<compressible::turbulenceModel>
         (
-            momentumTransportModel::propertiesName
+            turbulenceModel::propertiesName
         );
 
     const multi2Thermo& nbrThermo =
