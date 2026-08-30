@@ -152,6 +152,30 @@ include_directories(
 )
 link_libraries(OpenFOAM dl)
 
+# libOpenFOAM.so has undefined references to UPstream:: symbols that are
+# only ever resolved at the final executable's link step, not when building
+# the intermediate shared libraries (ELF .so's are allowed undefined
+# symbols; only linking an actual executable requires them all resolved) -
+# this is why the error only shows up linking hy2Foam/hy2MhdFoam themselves,
+# not any of the libraries above them. wmake resolves this the same way
+# (see wmake/rules/General/Gcc/link-c++'s "Link dummy stub to resolve
+# libPstream symbols" comment): the actual MPI Pstream implementation is
+# chosen by env vars this build doesn't try to replicate, but the "dummy"
+# (non-MPI) one always exists and satisfies the link regardless of whether
+# MPI is actually used at runtime. Applied only to the two solver
+# executables below (via hystrath_link_pstream_dummy), not every library,
+# so no library ends up with a hard runtime dependency on the dummy variant
+# if the case is actually run under mpirun with the real MPI Pstream.
+if(EXISTS "${FOAM_LIBBIN}/dummy/libPstream.so")
+  set(HYSTRATH_PSTREAM_DUMMY_DIR "${FOAM_LIBBIN}/dummy")
+endif()
+function(hystrath_link_pstream_dummy target)
+  if(HYSTRATH_PSTREAM_DUMMY_DIR)
+    target_link_directories(${target} PRIVATE "${HYSTRATH_PSTREAM_DUMMY_DIR}")
+    target_link_libraries(${target} PRIVATE Pstream)
+  endif()
+endfunction()
+
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${FOAM_USER_LIBBIN}")
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${FOAM_USER_APPBIN}")
 
@@ -416,6 +440,7 @@ target_include_directories(rarefactionParameters PUBLIC ${rarefactionParameters_
 target_link_libraries(rarefactionParameters PUBLIC
   strathSpecie strathReactionThermophysicalModels strathChemistryModel mfpModels
   compressibleTransportModels
+  strathCompressibleTurbulenceModel
 )
 
 # ============================================================================
@@ -433,6 +458,7 @@ target_include_directories(mixingRules PUBLIC ${mixingRules_OWN_INC} ${rarefacti
 target_link_libraries(mixingRules PUBLIC
   strathSpecie strathReactionThermophysicalModels strathChemistryModel
   compressibleTransportModels
+  strathCompressibleTurbulenceModel
 )
 
 hystrath_own_include_dirs("${HY}/src/thermophysicalModels/strath/strathSpecie/transport/speciesDiffusion/diffusivityModels" diffusivityModels_OWN_INC)
@@ -461,6 +487,7 @@ target_include_directories(multiSpeciesTransportModels PUBLIC ${multiSpeciesTran
 target_link_libraries(multiSpeciesTransportModels PUBLIC
   strathSpecie strathReactionThermophysicalModels strathChemistryModel diffusivityModels
   compressibleTransportModels
+  strathCompressibleTurbulenceModel
 )
 
 # ============================================================================
@@ -773,6 +800,7 @@ target_link_libraries(hy2Foam PRIVATE
   mfpModels rarefactionParameters mixingRules
   strathCompressibleTurbulenceModel hTCModels
 )
+hystrath_link_pstream_dummy(hy2Foam)
 
 # ============================================================================
 # 18. applications/solvers/compressible/hy2MhdFoam  ->  hy2MhdFoam (executable)
@@ -806,6 +834,7 @@ target_link_libraries(hy2MhdFoam PRIVATE
   mfpModels rarefactionParameters mixingRules
   strathCompressibleTurbulenceModel hTCModels spbpuMhdModels
 )
+hystrath_link_pstream_dummy(hy2MhdFoam)
 
 # ============================================================================
 # 19. Mesh utilities (independent of the CFD physics above)
