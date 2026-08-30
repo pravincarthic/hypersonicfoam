@@ -264,7 +264,7 @@ bool Foam::functionObjects::frictionCoefficient::write()
                     << " Cf : min = " << minCf << ", max = " << maxCf
                     << ", average = " << avgCf << nl;
 
-                writeTime(file());
+                writeCurrentTime(file());
                 file()
                     << token::TAB << patch.name()
                     << token::TAB << minCf

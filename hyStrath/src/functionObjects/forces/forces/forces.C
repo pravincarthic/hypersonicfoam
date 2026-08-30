@@ -684,7 +684,7 @@ void Foam::functionObjects::forces::writeBinnedForceMoment
 
     Ostream& os = osPtr();
 
-    writeTime(os);
+    writeCurrentTime(os);
 
     forAll(f[0], i)
     {

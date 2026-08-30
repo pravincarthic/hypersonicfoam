@@ -224,7 +224,7 @@ bool Foam::functionObjects::pressureCoefficient::write()
                     << " Cp : min = " << minCp << ", max = " << maxCp
                     << ", average = " << avgCp << nl;
 
-                writeTime(file());
+                writeCurrentTime(file());
                 file()
                     << token::TAB << patch.name()
                     << token::TAB << minCp

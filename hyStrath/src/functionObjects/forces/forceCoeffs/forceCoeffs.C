@@ -350,7 +350,7 @@ bool Foam::functionObjects::forceCoeffs::execute()
 
     if (writeToFile())
     {
-        writeTime(coeffFilePtr_());
+        writeCurrentTime(coeffFilePtr_());
         coeffFilePtr_()
             << tab << CmTot << tab  << CdTot
             << tab << ClTot << tab << ClfTot << tab << ClrTot << endl;

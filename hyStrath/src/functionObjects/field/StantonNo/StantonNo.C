@@ -251,7 +251,7 @@ bool Foam::functionObjects::StantonNo::write()
                     << " St : min = " << minStatonNo << ", max = " << maxStatonNo
                     << ", average = " << avgStatonNo << nl;
 
-                writeTime(file());
+                writeCurrentTime(file());
                 file()
                     << token::TAB << patch.name()
                     << token::TAB << minStatonNo
