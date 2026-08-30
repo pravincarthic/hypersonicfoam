@@ -30,14 +30,13 @@
       only builds hyStrath's own libraries/solvers against that install,
       it does not build OpenFOAM itself.
 
-  Known limitation carried over from the original wmake build, not
-  introduced by this CMake port: hy2Foam.C's hy2Foam_solver.H references
-  two preprocessor macros, HY2FOAM_EXTERNAL_FILE_HYBRID_COUPLING and
-  HY2FOAM_EXTERNAL_FILE_OUTPUT, that are never #define'd anywhere in the
-  source tree (unlike the three sibling HY2FOAM_EXTERNAL_FILE_* macros,
-  which are #define'd at the top of hy2Foam.C). Both wmake and this
-  CMake build will fail to compile hy2Foam.C until those two macros are
-  defined somewhere (e.g. alongside the other three in hy2Foam.C).
+  Note: hy2Foam_solver.H also references two further macros,
+  HY2FOAM_EXTERNAL_FILE_HYBRID_COUPLING and HY2FOAM_EXTERNAL_FILE_OUTPUT,
+  which are never #define'd anywhere in the source tree - this is not a
+  bug: both uses are wrapped in #ifdef/#endif, so they are optional
+  extension points (e.g. for coupling hy2Foam with an external
+  application, or adding custom per-timestep output) that compile away to
+  nothing when left undefined, exactly as intended.
 #]=======================================================================]
 
 cmake_minimum_required(VERSION 3.16)
