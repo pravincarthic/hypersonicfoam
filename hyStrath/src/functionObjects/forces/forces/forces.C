@@ -317,8 +317,8 @@ void Foam::functionObjects::forces::resetFields()
 Foam::tmp<Foam::volSymmTensorField>
 Foam::functionObjects::forces::devRhoReff() const
 {
-    typedef compressible::momentumTransportModel cmpTurbModel;
-    typedef incompressible::momentumTransportModel icoTurbModel;
+    typedef compressible::turbulenceModel cmpTurbModel;
+    typedef incompressible::turbulenceModel icoTurbModel;
 
     if (foundObject<cmpTurbModel>(cmpTurbModel::propertiesName))
     {
@@ -329,7 +329,7 @@ Foam::functionObjects::forces::devRhoReff() const
     }
     else if (foundObject<icoTurbModel>(icoTurbModel::propertiesName))
     {
-        const incompressible::momentumTransportModel& turb =
+        const incompressible::turbulenceModel& turb =
             lookupObject<icoTurbModel>(icoTurbModel::propertiesName);
 
         return rho()*turb.devReff();

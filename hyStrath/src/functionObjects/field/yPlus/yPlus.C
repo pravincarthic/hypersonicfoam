@@ -25,7 +25,7 @@ License
 
 #include "yPlus.H"
 #include "volFields.H"
-#include "momentumTransportModel.H"
+#include "turbulenceModel.H"
 #include "nutWallFunctionFvPatchScalarField.H"
 #include "wallFvPatch.H"
 #include "addToRunTimeSelectionTable.H"
@@ -125,14 +125,14 @@ bool Foam::functionObjects::yPlus::execute()
             lookupObject<volScalarField>(typeName)
         );
 
-    if (foundObject<momentumTransportModel>(momentumTransportModel::propertiesName))
+    if (foundObject<turbulenceModel>(turbulenceModel::propertiesName))
     {
         volScalarField::Boundary& yPlusBf = yPlus.boundaryFieldRef();
 
-        const momentumTransportModel& model =
-            lookupObject<momentumTransportModel>
+        const turbulenceModel& model =
+            lookupObject<turbulenceModel>
             (
-                momentumTransportModel::propertiesName
+                turbulenceModel::propertiesName
             );
 
         const nearWallDist nwd(mesh_);

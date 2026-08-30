@@ -188,8 +188,8 @@ bool Foam::functionObjects::wallShearStress::read(const dictionary& dict)
 
 bool Foam::functionObjects::wallShearStress::execute()
 {
-    typedef compressible::momentumTransportModel cmpModel;
-    typedef incompressible::momentumTransportModel icoModel;
+    typedef compressible::turbulenceModel cmpModel;
+    typedef incompressible::turbulenceModel icoModel;
 
     volVectorField& wallShearStress =
         const_cast<volVectorField&>
@@ -198,17 +198,17 @@ bool Foam::functionObjects::wallShearStress::execute()
         );
 
     tmp<volSymmTensorField> Reff;
-    if (mesh_.foundObject<cmpModel>(momentumTransportModel::propertiesName))
+    if (mesh_.foundObject<cmpModel>(turbulenceModel::propertiesName))
     {
         const cmpModel& model =
-            mesh_.lookupObject<cmpModel>(momentumTransportModel::propertiesName);
+            mesh_.lookupObject<cmpModel>(turbulenceModel::propertiesName);
 
         Reff = model.devRhoReff();
     }
-    else if (mesh_.foundObject<icoModel>(momentumTransportModel::propertiesName))
+    else if (mesh_.foundObject<icoModel>(turbulenceModel::propertiesName))
     {
         const icoModel& model =
-            mesh_.lookupObject<icoModel>(momentumTransportModel::propertiesName);
+            mesh_.lookupObject<icoModel>(turbulenceModel::propertiesName);
 
         Reff = model.devReff();
     }

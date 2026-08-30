@@ -89,7 +89,7 @@ public:
         SCEBD
         (
             rho2ReactionThermo& thermo,
-            const compressible::momentumTransportModel& turbulence
+            const compressible::turbulenceModel& turbulence
         );
 
 

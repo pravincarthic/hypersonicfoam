@@ -129,9 +129,9 @@ surfaceScalarField phi("phi", mesh.Sf() & fvc::interpolate(rhoU));
 // Introduction of the turbulence model
 //---------------------------------------------------------
 Info<< "Creating turbulence model\n" << endl;
-autoPtr<compressible::momentumTransportModel> turbulence
+autoPtr<compressible::turbulenceModel> turbulence
 (
-    compressible::momentumTransportModel::New
+    compressible::turbulenceModel::New
     (
         rho,
         U,

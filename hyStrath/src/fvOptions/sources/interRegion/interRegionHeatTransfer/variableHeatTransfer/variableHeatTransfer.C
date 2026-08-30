@@ -23,7 +23,7 @@ License
 
 \*---------------------------------------------------------------------------*/
 
-#include "multi2VariableHeatTransfer.H"
+#include "variableHeatTransfer.H"
 #include "turbulentFluidThermoModel.H"
 #include "addToRunTimeSelectionTable.H"
 
@@ -33,11 +33,11 @@ namespace Foam
 {
 namespace fv
 {
-    defineTypeNameAndDebug(multi2VariableHeatTransfer, 0);
+    defineTypeNameAndDebug(variableHeatTransfer, 0);
     addToRunTimeSelectionTable
     (
         option,
-        multi2VariableHeatTransfer,
+        variableHeatTransfer,
         dictionary
     );
 }
@@ -46,7 +46,7 @@ namespace fv
 
 // * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
 
-Foam::fv::multi2VariableHeatTransfer::multi2VariableHeatTransfer
+Foam::fv::variableHeatTransfer::variableHeatTransfer
 (
     const word& name,
     const word& modelType,
@@ -91,21 +91,21 @@ Foam::fv::multi2VariableHeatTransfer::multi2VariableHeatTransfer
 
 // * * * * * * * * * * * * * * * * Destructor  * * * * * * * * * * * * * * * //
 
-Foam::fv::multi2VariableHeatTransfer::~multi2VariableHeatTransfer()
+Foam::fv::variableHeatTransfer::~variableHeatTransfer()
 {}
 
 
 // * * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * //
 
-void Foam::fv::multi2VariableHeatTransfer::calculateHtc()
+void Foam::fv::variableHeatTransfer::calculateHtc()
 {
     const fvMesh& nbrMesh =
         mesh_.time().lookupObject<fvMesh>(nbrRegionName());
 
-    const compressible::momentumTransportModel& nbrTurb =
-        nbrMesh.lookupObject<compressible::momentumTransportModel>
+    const compressible::turbulenceModel& nbrTurb =
+        nbrMesh.lookupObject<compressible::turbulenceModel>
         (
-            momentumTransportModel::propertiesName
+            turbulenceModel::propertiesName
         );
 
     const multi2Thermo& nbrThermo =
@@ -126,7 +126,7 @@ void Foam::fv::multi2VariableHeatTransfer::calculateHtc()
 }
 
 
-bool Foam::fv::multi2VariableHeatTransfer::read(const dictionary& dict)
+bool Foam::fv::variableHeatTransfer::read(const dictionary& dict)
 {
     if (interRegionHeatTransferModel::read(dict))
     {

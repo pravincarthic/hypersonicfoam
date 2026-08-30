@@ -24,7 +24,7 @@ License
 \*---------------------------------------------------------------------------*/
 
 #include "omegaLowReWallFunctionFvPatchScalarField.H"
-#include "momentumTransportModel.H"
+#include "turbulenceModel.H"
 #include "fvPatchFieldMapper.H"
 #include "volFields.H"
 #include "addToRunTimeSelectionTable.H"
@@ -167,11 +167,11 @@ void omegaLowReWallFunctionFvPatchScalarField::updateCoeffs()
 
     const label patchI = patch().index();
 
-    const momentumTransportModel& turbModel = db().lookupObject<momentumTransportModel>
+    const turbulenceModel& turbModel = db().lookupObject<turbulenceModel>
     (
         IOobject::groupName
         (
-            momentumTransportModel::propertiesName,
+            turbulenceModel::propertiesName,
             internalField().group()
         )
     );

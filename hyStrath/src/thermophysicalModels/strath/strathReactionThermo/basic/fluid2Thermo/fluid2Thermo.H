@@ -36,6 +36,7 @@ SourceFiles
 #define fluid2Thermo_H
 
 #include "basic2Thermo.H"
+#include "compressibleTransportModel.H" // NEW VINCENT 08/10/2017
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
@@ -48,11 +49,8 @@ namespace Foam
 
 class fluid2Thermo
 :
-    public basic2Thermo
-    // NOTE: compressibleTransportModel base dropped for the OpenFOAM v2412
-    // port - that abstract base class no longer exists (transportModels/
-    // compressible was folded into the thermo classes). fluid2Thermo already
-    // declares/implements its own mu()/nu() below, so nothing is lost.
+    public basic2Thermo,
+    public compressibleTransportModel // NEW VINCENT 08/10/2017
 {
 
 protected:

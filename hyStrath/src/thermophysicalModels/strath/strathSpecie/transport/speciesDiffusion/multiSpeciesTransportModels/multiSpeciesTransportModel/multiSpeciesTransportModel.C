@@ -141,7 +141,7 @@ void Foam::multiSpeciesTransportModel::temperatureGradientContributionToSpeciesM
 Foam::multiSpeciesTransportModel::multiSpeciesTransportModel
 (
     rho2ReactionThermo& thermo,
-    const compressible::momentumTransportModel& turbulence
+    const compressible::turbulenceModel& turbulence
 )
 :
     IOdictionary
